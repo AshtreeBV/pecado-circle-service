@@ -6,25 +6,7 @@ from app.__internal import Function
 from config import cfg
 
 
-def error(message, info):
-    return {
-        "success": False,
-        "error": f"{message}",
-        "info": info
-    }
-
-
-class CreateGameParam():
-    registrationStartTimestamp: int = 0
-    registrationEndTimestamp:   int = 0
-    tournamentStartTimestamp:   int = 0
-    tournamentEndTimestamp:     int = 0
-    minRoosters:                int = 0
-    maxRoosters:                int = 0
-    fee:                        int = 0
-    distributions:              list[int]
-
-class Scholarship(Function):
+class SampleAPI(Function):
 
     def __init__(self, error: Callable):
         self.log.info("This is where the initialization code go")
