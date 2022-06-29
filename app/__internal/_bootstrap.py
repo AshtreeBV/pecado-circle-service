@@ -1,33 +1,65 @@
 import glob
+import threading
 import traceback
 from importlib import util
 import os.path
 import sys
+import requests
+import datetime
 
 from fastapi.responses import RedirectResponse
 
-class Logger:
 
+class Logger:
     def __init__(self, service: str):
         self.service = service
+        self.id = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 
-    def info(self, *msg):
-        self._log("INFO", *msg)
+        self.url = f"https://servicelogssea.blob.core.windows.net/servicelogs/{self.service}-{self.id}.txt?sp=cw&st=2022" \
+                   f"-06-27T13:36:58Z" \
+                   "&se=2023-06-27T21:36:58Z&spr=https&sv=2021-06-08&sr=c&sig=sBZv%2FcVZUDUWb4JSILKIm" \
+                   "%2FQ7Ttc4gmyFnwciEVhK3Eg%3D"
 
-    def warn(self, *msg):
-        self._log("WARN", *msg)
+        payload = {}
+        headers = {
+            'x-ms-blob-type': 'AppendBlob'
 
-    def debug(self, *msg):
-        self._log("DEBU", *msg)
+        }
+        requests.request("PUT", self.url, headers=headers, data=payload)
 
-    def verbose(self, *msg):
-        self._log("VERB", *msg)
+    def _log(self, level: str, message: str, *args):
+        if message.count("{}") <= len(args):
+            message += " {}" * (len(args) - message.count("{}"))
 
-    def _log(self, typ: str, *msg):
-        print(f"[{typ}] {self.service}: {' '.join([str(x) for x in msg])}")
+        args = [f"{x}" for x in args]
+        message = f"[{self.service}][{datetime.datetime.now().isoformat()}][{level}] {message.format(*args)}"
+        print(message)
+
+        payload = message + "\n"
+        headers = {
+            'x-ms-blob-type': 'AppendBlob',
+            'Content-Type': 'text/plain'
+        }
+
+        def send_log():
+            print("Sending request")
+            requests.request("PUT", self.url + "&comp=appendblock", headers=headers, data=payload)
+
+        threading.Thread(None, send_log, daemon=True).start()
+
+    def Info(self, message: str, *args):
+        self._log("INFO", message, *args)
+
+    def Debug(self, message: str, *args):
+        self._log("DEBU", message, *args)
+
+    def Error(self, message: str, *args):
+        self._log("ERRO", message, *args)
+
 
 class Function:
     __log = None
+
     @staticmethod
     def _dummy_function():
         ...
@@ -64,7 +96,6 @@ class ConfigBase:
                     print(f"Warning: .env produced an invalid entry in line {i + 1}")
         except FileNotFoundError:
             ...
-
 
         return self
 
@@ -113,8 +144,9 @@ def bootstrap(app):
                     fn = fn(error)
                 except Exception as e:
                     exc_type, exc_value, exc_traceback = sys.exc_info()
-                    errors.append({"info": f"Init raised an exception: {''.join(traceback.format_exception(exc_type, exc_value, exc_traceback))}",
-                                   "function": module_name})
+                    errors.append({
+                        "info": f"Init raised an exception: {''.join(traceback.format_exception(exc_type, exc_value, exc_traceback))}",
+                        "function": module_name})
 
             if (getattr(fn, "Bootstrap", None)) is not None:
                 bootstraps.append({"class": fn, "name": module_name})
