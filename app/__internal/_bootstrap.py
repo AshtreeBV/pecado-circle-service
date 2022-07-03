@@ -15,16 +15,15 @@ class Logger:
         self.service = service
         self.id = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 
-        self.url = f"https://servicelogssea.blob.core.windows.net/servicelogs/{self.service}-{self.id}.txt?sp=cw&st=2022" \
-                   f"-06-27T13:36:58Z" \
-                   "&se=2023-06-27T21:36:58Z&spr=https&sv=2021-06-08&sr=c&sig=sBZv%2FcVZUDUWb4JSILKIm" \
-                   "%2FQ7Ttc4gmyFnwciEVhK3Eg%3D"
+        self.url = (
+            f"https://servicelogssea.blob.core.windows.net/servicelogs/{self.service}-{self.id}.txt?sp=cw&st=2022"
+            f"-06-27T13:36:58Z"
+            "&se=2023-06-27T21:36:58Z&spr=https&sv=2021-06-08&sr=c&sig=sBZv%2FcVZUDUWb4JSILKIm"
+            "%2FQ7Ttc4gmyFnwciEVhK3Eg%3D"
+        )
 
         payload = {}
-        headers = {
-            'x-ms-blob-type': 'AppendBlob'
-
-        }
+        headers = {"x-ms-blob-type": "AppendBlob"}
         requests.request("PUT", self.url, headers=headers, data=payload)
 
     def _log(self, level: str, message: str, *args):
@@ -36,14 +35,13 @@ class Logger:
         print(message)
 
         payload = message + "\n"
-        headers = {
-            'x-ms-blob-type': 'AppendBlob',
-            'Content-Type': 'text/plain'
-        }
+        headers = {"x-ms-blob-type": "AppendBlob", "Content-Type": "text/plain"}
 
         def send_log():
             print("Sending request")
-            requests.request("PUT", self.url + "&comp=appendblock", headers=headers, data=payload)
+            requests.request(
+                "PUT", self.url + "&comp=appendblock", headers=headers, data=payload
+            )
 
         threading.Thread(None, send_log, daemon=True).start()
 
@@ -78,8 +76,10 @@ class ConfigBase:
 
     def Load(self):
         for x in self.__dir__():
-            if x.startswith("__"): continue
-            if callable(getattr(self, x)): continue
+            if x.startswith("__"):
+                continue
+            if callable(getattr(self, x)):
+                continue
             if method := getattr(self, f"resolve_{x}", None):
                 self.__dict__[x] = method()
             else:
@@ -127,6 +127,8 @@ def bootstrap(app):
         fn = None
         for attr_str in dir(module):
             attr = getattr(module, attr_str)
+            if "_bootstrap.Function" in f"{attr}":
+                continue
             if getattr(attr, "_dummy_function", None):
                 fn = attr
 
@@ -136,7 +138,9 @@ def bootstrap(app):
 
                 def error(*msg: any, warn=False):
                     if warn:
-                        warnings.append({"info": " ".join(msg), "function": module_name})
+                        warnings.append(
+                            {"info": " ".join(msg), "function": module_name}
+                        )
                         return
                     errors.append({"info": " ".join(msg), "function": module_name})
 
@@ -144,9 +148,12 @@ def bootstrap(app):
                     fn = fn(error)
                 except Exception as e:
                     exc_type, exc_value, exc_traceback = sys.exc_info()
-                    errors.append({
-                        "info": f"Init raised an exception: {''.join(traceback.format_exception(exc_type, exc_value, exc_traceback))}",
-                        "function": module_name})
+                    errors.append(
+                        {
+                            "info": f"Init raised an exception: {''.join(traceback.format_exception(exc_type, exc_value, exc_traceback))}",
+                            "function": module_name,
+                        }
+                    )
 
             if (getattr(fn, "Bootstrap", None)) is not None:
                 bootstraps.append({"class": fn, "name": module_name})
@@ -163,11 +170,11 @@ def bootstrap(app):
         print("ERROR: FUNCTIONS FAILED TO START\n\tCheck /docs for more info")
         app.description += """\n\n***Error: API Failed to start***\n"""
         for err in errors:
-            trace = err['info'].replace("\n", "\n\t\t")
+            trace = err["info"].replace("\n", "\n\t\t")
             app.description += f"\n\t[{err['function']}]: {trace}"
 
     if warnings:
         app.description += """\n\n***API Returned warnings***\n"""
         for err in warnings:
-            trace = err['info'].replace("\n", "\n\t\t")
+            trace = err["info"].replace("\n", "\n\t\t")
             app.description += f"\n\t[{err['function']}]: {trace}"
