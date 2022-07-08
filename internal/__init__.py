@@ -24,8 +24,8 @@ class ConfigBase:
 
             for i, line in enumerate(lines):
                 x = line.strip().split("=")
-                if len(x) == 2:
-                    self.__dict__[x[0]] = x[1]
+                if len(x) >= 2:
+                    self.__dict__[x[0]] = "=".join(x[1:])
                 else:
                     print(f"Warning: .env produced an invalid entry in line {i + 1}")
         except FileNotFoundError:
@@ -40,7 +40,7 @@ class ConfigBase:
                 r.append(k)
 
         return r
-    
+        
 
 def json_response(data, status_code=200) -> func.HttpResponse:
     return func.HttpResponse(
