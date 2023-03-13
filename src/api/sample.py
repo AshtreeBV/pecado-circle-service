@@ -17,8 +17,6 @@ class SampleAPI(Function):
 
         @router.get("/")
         def index():
-            self.log.debug("Hello debug!")
-            self.log.verbose("Hello verbose!")
             return {"hello": "world"}
 
 
