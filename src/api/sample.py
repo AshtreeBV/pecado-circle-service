@@ -9,7 +9,7 @@ from config import cfg
 class SampleAPI(Function):
 
     def __init__(self, error: Callable):
-        self.log.info("This is where the initialization code go")
+        ...
 
     def Bootstrap(self, app: FastAPI):
 
@@ -22,7 +22,6 @@ class SampleAPI(Function):
 
         @router.get("/foo")
         def foo():
-            self.log.info("Somoeone called the foo endpoint!")
             return {
                 "mnemonic": cfg.MY_CONFIGURATION,
                 "remote": cfg.REMOTE_ID
