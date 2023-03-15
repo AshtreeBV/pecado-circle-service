@@ -1,5 +1,5 @@
 from typing import Callable,Optional
-from fastapi import FastAPI, APIRouter, Body
+from fastapi import FastAPI, APIRouter, Body, HTTPException
 from app.__internal import Function
 import requests
 from pydantic import BaseModel
@@ -49,7 +49,7 @@ class CircleApi(Function):
                 r= response.json()['data']
                 return r
             except Exception:
-                raise Exception(f"Circle Service returned an error:"+response.text) 
+                raise HTTPException(status_code=400, detail=f"Circle Service returned an error: {response.text}")
         @router.post("/payment")
         def createCard(paymentreq:PaymentReq):
             baseurl= Configuration.CIRCLE_API_URL
@@ -60,7 +60,7 @@ class CircleApi(Function):
                 year=yaer + str(yearInput)
 
             except Exception:
-                raise Exception(f"Invalid card expiry date") 
+                raise HTTPException(status_code=400, detail=f"Invalid card expiry date")
             try:
                         
                 id=uuid.uuid4()
@@ -96,10 +96,12 @@ class CircleApi(Function):
                 cardresponse = requests.post(url, json=cardpayload, headers=postheader)
                 cardresponseData=cardresponse.json()
             except Exception:
-                raise Exception(f"Circle Service returned an error: "+cardresponse.text)
+                raise HTTPException(status_code=400, detail=f"Circle Service returned an error: {cardresponse.text}")
             try:
                 cardId=cardresponseData['data']['id']
-
+            except Exception:
+                raise HTTPException(status_code=400, detail=f"{cardresponseData['message']}")
+            try:
                 url = baseurl + "/payments"
                 id=uuid.uuid4()
                 payment_payload = {
@@ -127,7 +129,7 @@ class CircleApi(Function):
                 
                 return paymentresponse.json()
             except Exception:
-                raise Exception(f"Circle Service returned an error: {paymentresponse.text}")
+                raise HTTPException(status_code=400, detail=f"{paymentresponse.text}")
                 
                 
         app.include_router(router)
