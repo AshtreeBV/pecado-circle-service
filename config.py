@@ -5,9 +5,6 @@ from internal import ConfigBase, UNSET
 
 
 class Configuration(ConfigBase):
-    MY_CONFIGURATION: str = UNSET
-    REMOTE_IP: str = UNSET
-    HAS_DEFAULT_VALUE: int = 40
 
  #Circle configuration
     CIRCLE_API_KEY: str = "QVBJX0tFWTpkNzhmODQwYjEyNDI0YmI5NDNhODUzNDhlZmQzNzU2Njo1OWU1YmU1YWYxNmE1ZmVlZjE2MGU0MDJkYzYzOGYzNw=="
