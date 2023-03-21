@@ -6,8 +6,7 @@ from pydantic import BaseModel
 import json
 import uuid
 import datetime
-
-from config import Configuration
+from config import cfg
 
 class PaymentReq(BaseModel):
     amount: str
@@ -39,11 +38,11 @@ class CircleApi(Function):
         @router.get("/getpublickey")
         def getPublicKey():
             try:
-                baseurl= Configuration.CIRCLE_API_URL
+                baseurl= cfg.CIRCLE_API_URL
                 url =  baseurl + "/encryption/public"
                 headers = {
                     "accept": "application/json",
-                    "authorization": "Bearer "+ Configuration.CIRCLE_API_KEY,
+                    "authorization": "Bearer "+ cfg.CIRCLE_API_KEY,
                 }
                 response = requests.get(url, headers=headers)
                 r= response.json()['data']
@@ -52,7 +51,7 @@ class CircleApi(Function):
                 raise HTTPException(status_code=400, detail=f"Circle Service returned an error: {response.text}")
         @router.post("/payment")
         def createCard(paymentreq:PaymentReq):
-            baseurl= Configuration.CIRCLE_API_URL
+            baseurl= cfg.CIRCLE_API_URL
             try:
                 yaer= str(datetime.datetime.now().year)[:2]
                 month= int(paymentreq.card_exp.split(" / ")[0])
@@ -90,7 +89,7 @@ class CircleApi(Function):
                 postheader = {
                     "accept": "application/json",
                     "content-type": "application/json",
-                    "authorization": "Bearer "+ Configuration.CIRCLE_API_KEY,
+                    "authorization": "Bearer "+ cfg.CIRCLE_API_KEY,
                 }
 
                 cardresponse = requests.post(url, json=cardpayload, headers=postheader)
